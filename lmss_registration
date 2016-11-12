@@ -1,0 +1,80 @@
+#!/bin/bash
+usage(){
+  echo "  MRI data registration to MNI space."
+  echo "    Usage: $(basename $0) -i <Image> -l <Label> [-b]"
+  echo ""
+  echo "    <Image> = The T1/T2/T2-FLAIR image to be registered to MNI152 space."
+  echo "    <Label> = Manula label"
+  echo ""
+  echo "    [-b]    = Apply brain extraction on the image. (OPTIONAL)"
+}
+
+if [[ `which fsl` == "" ]]; then
+  echo "FSL is not installed in the system."
+  exit
+fi
+if [[ ! -d "$FSLDIR/data" ]]; then
+  echo "FSLDIR/data folder does not exist!"
+  exit
+fi
+
+IMAGE=""
+LABEL=""
+DO_BET="N"
+
+while getopts "bi:l:" opt; do
+  case $opt in
+    b) DO_BET="Y"
+    ;;
+    i) IMAGE=$OPTARG
+    ;;
+    l) LABEL=$OPTARG
+    ;;
+    :) echo "Option -$OPTARG requires an argument."
+    exit 1
+    ;;
+    \?)
+      echo "Invalid option: -$OPTARG"
+      exit 1
+      ;;
+  esac
+done
+
+if [[ $# -lt 2 ]]; then
+  usage
+  exit
+fi
+
+if [[ ! -e $IMAGE || ! -e $LABEL ]]; then
+  echo "Input image or label does not exist!"
+  exit 1
+fi
+
+if [[ $DO_BET == "Y" ]]; then
+  echo "Applying brain extraction..."
+  bet $IMAGE $(dirname $IMAGE)/$(basename $IMAGE) -m
+fi
+
+echo "Registering $(basename $IMAGE) to MNI152"
+if [[ $DO_BET == "N" ]]; then
+  # Linear registration
+  echo "--> Step 1: Linear approximation..."
+  flirt -in $IMAGE -ref $FSLDIR/data/standard/MNI152_T1_1mm.nii.gz -out $(dirname $IMAGE)/$(basename $IMAGE)_tmp_flirt -omat $(dirname $IMAGE)/native2temp.mat -cost mutualinfo
+
+  # Non linear registration
+  echo "--> Step 2: Non linear approximation..."
+  IN=$(dirname $IMAGE)/$(basename $IMAGE)_tmp_flirt
+  OUT=$(dirname $IMAGE)/$(basename $IMAGE)_MNI
+  REF=$FSLDIR/data/standard/MNI152_T1_1mm.nii.gz
+  OUT=$(dirname $IMAGE)/$(basename $IMAGE)_tmp_fnirt
+  FIELD=$(dirname $IMAGE)/$(basename $IMAGE)_tmp_field
+  fnirt --ref=$REF --in=$IN --cout=$FIELD --iout=$(dirname $IMAGE)/$(basename $IMAGE)_MNI
+
+  echo "--> Applying transformations in label volume"
+  applywarp --ref=$REF --in=$LABEL --premat=$(dirname $IMAGE)/native2temp.mat --warp=$(dirname $IMAGE)/$(basename $IMAGE)_tmp_flirt_warpcoef --out=$(dirname $LABEL)/$(basename $LABEL)_MNI.nii.gz --interp nn
+
+  #Removing trash files
+  # rm `echo ${NATIVE_PATH}/${NATIVE_NAME}_tmp_flirt*` ${NATIVE_PATH}/native2temp.mat `echo ${NATIVE_PATH}/${NATIVE_NAME}_tmp_flirt_warpcoef*`
+else
+echo "editar.."
+fi
