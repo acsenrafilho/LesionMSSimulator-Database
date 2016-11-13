@@ -1,0 +1,11 @@
+In order to colected and build your own MS lesion database, you have to follow the sequence:
+
+1: Register your structural MRI and manual lesion map to the MNI space
+-> In this case, the script lmss_1_register already prepare a FSL registration in those data. Follow the input instructions in the script header.
+
+2: Extract information from the data and build the measurement baseline table
+-> This step is performed by the lmss_2_extractInfo executable. Here, you have to provide a folder where all the registered data are (with the prefix name already setup, for example patient1_T1.nii.gz, patient1_T2.nii.gz, patient1_label.nii.gz and so on)
+-> This executable create two things: 1) a measurement table and 2) the lesion maps for each size preset. With those size folders already setup, you can call the last script in order to create the lesion map vector image.
+
+3: Create the lesion map in vector space. (This is the final lesion map used for the simulator)
+-> Call the lmss_3_lesionVectorDatabase file with the input parameters.

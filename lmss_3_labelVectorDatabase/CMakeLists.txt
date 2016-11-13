@@ -6,7 +6,7 @@ endif()
 
 
 # This project is designed to be built outside the Insight source tree.
-project(lmss_extractInfo)
+project(lmss_3_labelVectorDatabase)
 
 # Find ITK.
 find_package(ITK REQUIRED)
@@ -17,9 +17,9 @@ IF(ITK_FOUND)
             "Cannot build InsightApplications without ITK.  Please set ITK_DIR.")
   ENDIF(ITK_FOUND)
 
-add_executable(lmss_extractInfo
-lmss_extractInfo.cpp
+add_executable(lmss_3_labelVectorDatabase
+lmss_3_labelVectorDatabase.cpp
 )
 
 
-target_link_libraries(lmss_extractInfo ${ITK_LIBRARIES} )
+target_link_libraries(lmss_3_labelVectorDatabase ${ITK_LIBRARIES} )

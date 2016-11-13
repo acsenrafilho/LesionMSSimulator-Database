@@ -1,0 +1,54 @@
+#!/bin/bash
+usage(){
+  echo "  Apply fine adjustments in label images. (Erode and filling holes)"
+  echo "    Usage: $(basename $0) -l <Label> -r <Erode radius (mm)>"
+  echo ""
+  echo "    <Label>         = Manual label (MANDATORY)"
+  echo "    <Erode radius>  = Define the radius of the structure element (erode morphological operator). Default: 1 mm (OPTIONAL)"
+  echo ""
+}
+
+if [[ `which fsl` == "" ]]; then
+  echo "FSL is not installed in the system."
+  exit
+fi
+if [[ ! -d "$FSLDIR/data" ]]; then
+  echo "FSLDIR/data folder does not exist!"
+  exit
+fi
+
+LABEL=""
+RADIUS="1"
+
+while getopts "l:r:" opt; do
+  case $opt in
+    l) LABEL=$OPTARG
+    ;;
+    r) RADIUS=$OPTARG
+    ;;
+    :) echo "Option -$OPTARG requires an argument."
+    exit 1
+    ;;
+    \?)
+      echo "Invalid option: -$OPTARG"
+      exit 1
+      ;;
+  esac
+done
+
+if [[ $# -lt 1 ]]; then
+  usage
+  exit
+fi
+
+if [[ ! -e $LABEL ]]; then
+  echo "Input label does not exist!"
+  exit 1
+fi
+
+echo "Adjusting $(basename $LABEL)..."
+echo "Eroding - radius: $RADIUS mm"
+fslmaths $LABEL -ero -kernel sphere $RADIUS $(dirname $LABEL)/$(basename $LABEL)_corr.nii.gz
+
+echo "Filling holes - $(basename $LABEL)"
+fslmaths $(dirname $LABEL)/$(basename $LABEL)_corr.nii.gz -fillh -kernel sphere $RADIUS $(dirname $LABEL)/$(basename $LABEL)_corr.nii.gz
