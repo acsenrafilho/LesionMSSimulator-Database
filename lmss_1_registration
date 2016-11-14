@@ -75,7 +75,7 @@ if [[ $DO_BET == "N" ]]; then
     exit 1
   else
     echo "--> Applying transformations in label volume"
-    applywarp --ref=$REF --in=$LABEL --premat=$(dirname $IMAGE)/$(basename $IMAGE)_native2temp.mat --warp=$(dirname $IMAGE)/$(basename $IMAGE)_tmp_flirt_warpcoef --out=$(dirname $LABEL)/$(basename $LABEL)_MNI.nii.gz --interp=nn
+    applywarp --ref=$REF --in=$LABEL --premat=$(dirname $IMAGE)/$(basename $IMAGE)_native2temp.mat --warp=$(dirname $IMAGE)/$(basename $IMAGE)_tmp_field --out=$(dirname $LABEL)/$(basename $LABEL)_MNI.nii.gz --interp=nn
     # Removing trash files
     # rm `echo $(dirname $IMAGE)/$(basename $IMAGE)_tmp_flirt*` $(dirname $IMAGE)/$(basename $IMAGE)_native2temp.mat `echo $(dirname $IMAGE)/$(basename $IMAGE)_tmp_field*`
   fi
@@ -101,7 +101,7 @@ else
     exit 1
   else
     echo "--> Applying transformations in label volume"
-    applywarp --ref=$REF --in=$LABEL --premat=$(dirname $IMAGE)/$(basename $IMAGE)_native2temp.mat --warp=$(dirname $IMAGE)/$(basename $IMAGE)_tmp_flirt_warpcoef --out=$(dirname $LABEL)/$(basename $LABEL)_MNI.nii.gz --interp=nn
+    applywarp --ref=$REF --in=$LABEL --premat=$(dirname $IMAGE)/$(basename $IMAGE)_native2temp.mat --warp=$(dirname $IMAGE)/$(basename $IMAGE)_tmp_field --out=$(dirname $LABEL)/$(basename $LABEL)_MNI.nii.gz --interp=nn
     # Removing trash files
     # rm `echo $(dirname $IMAGE)/$(basename $IMAGE)_tmp_flirt*` $(dirname $IMAGE)/$(basename $IMAGE)_native2temp.mat `echo $(dirname $IMAGE)/$(basename $IMAGE)_tmp_field*`
   fi
