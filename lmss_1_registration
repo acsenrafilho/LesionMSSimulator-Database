@@ -3,8 +3,8 @@ usage(){
   echo "  MRI data registration to MNI space."
   echo "    Usage: $(basename $0) -i <Image> -l <Label> [-b]"
   echo ""
-  echo "    <Image> = The T1/T2/T2-FLAIR image to be registered to MNI152 space."
-  echo "    <Label> = Manula label"
+  echo "    <Image> = The T1/T2/T2-FLAIR/PD image to be registered to MNI152 space. (MANDATORY)"
+  echo "    <Label> = Manual label."
   echo ""
   echo "    [-b]    = Apply brain extraction on the image. (OPTIONAL)"
 }
@@ -40,26 +40,26 @@ while getopts "bi:l:" opt; do
   esac
 done
 
-if [[ $# -lt 2 ]]; then
+if [[ $# -lt 1 ]]; then
   usage
   exit
 fi
 
-if [[ ! -e $IMAGE || ! -e $LABEL ]]; then
-  echo "Input image or label does not exist!"
+if [[ ! -e $IMAGE ]]; then
+  echo "Input image does not exist!"
   exit 1
 fi
 
 if [[ $DO_BET == "Y" ]]; then
   echo "Applying brain extraction..."
-  bet $IMAGE $(dirname $IMAGE)/$(basename $IMAGE) -m
+  bet $IMAGE $(dirname $IMAGE)/$(basename $IMAGE)
 fi
 
 echo "Registering $(basename $IMAGE) to MNI152"
 if [[ $DO_BET == "N" ]]; then
   # Linear registration
   echo "--> Step 1: Linear approximation..."
-  flirt -in $IMAGE -ref $FSLDIR/data/standard/MNI152_T1_1mm.nii.gz -out $(dirname $IMAGE)/$(basename $IMAGE)_tmp_flirt -omat $(dirname $IMAGE)/native2temp.mat -cost mutualinfo
+  flirt -in $IMAGE -ref $FSLDIR/data/standard/MNI152_T1_1mm.nii.gz -out $(dirname $IMAGE)/$(basename $IMAGE)_tmp_flirt -omat $(dirname $IMAGE)/$(basename $IMAGE)_native2temp.mat -cost mutualinfo
 
   # Non linear registration
   echo "--> Step 2: Non linear approximation..."
@@ -70,11 +70,42 @@ if [[ $DO_BET == "N" ]]; then
   FIELD=$(dirname $IMAGE)/$(basename $IMAGE)_tmp_field
   fnirt --ref=$REF --in=$IN --cout=$FIELD --iout=$(dirname $IMAGE)/$(basename $IMAGE)_MNI
 
-  echo "--> Applying transformations in label volume"
-  applywarp --ref=$REF --in=$LABEL --premat=$(dirname $IMAGE)/native2temp.mat --warp=$(dirname $IMAGE)/$(basename $IMAGE)_tmp_flirt_warpcoef --out=$(dirname $LABEL)/$(basename $LABEL)_MNI.nii.gz --interp nn
+  if [[ ! -e $LABEL ]]; then
+    echo "Input image or label does not exist!"
+    exit 1
+  else
+    echo "--> Applying transformations in label volume"
+    applywarp --ref=$REF --in=$LABEL --premat=$(dirname $IMAGE)/$(basename $IMAGE)_native2temp.mat --warp=$(dirname $IMAGE)/$(basename $IMAGE)_tmp_flirt_warpcoef --out=$(dirname $LABEL)/$(basename $LABEL)_MNI.nii.gz --interp=nn
+    # Removing trash files
+    # rm `echo $(dirname $IMAGE)/$(basename $IMAGE)_tmp_flirt*` $(dirname $IMAGE)/$(basename $IMAGE)_native2temp.mat `echo $(dirname $IMAGE)/$(basename $IMAGE)_tmp_field*`
+  fi
 
-  #Removing trash files
-  # rm `echo ${NATIVE_PATH}/${NATIVE_NAME}_tmp_flirt*` ${NATIVE_PATH}/native2temp.mat `echo ${NATIVE_PATH}/${NATIVE_NAME}_tmp_flirt_warpcoef*`
+  # Removing trash files
+  # rm `echo $(dirname $IMAGE)/$(basename $IMAGE)_tmp_flirt*` `echo $(dirname $IMAGE)/$(basename $IMAGE)_tmp_field*`
 else
-echo "editar.."
+  # Linear registration
+  echo "--> Step 1: Linear approximation..."
+  flirt -in $IMAGE -ref $FSLDIR/data/standard/MNI152_T1_1mm_brain.nii.gz -out $(dirname $IMAGE)/$(basename $IMAGE)_tmp_flirt -omat $(dirname $IMAGE)/$(basename $IMAGE)_native2temp.mat -cost mutualinfo
+
+  # Non linear registration
+  echo "--> Step 2: Non linear approximation..."
+  IN=$(dirname $IMAGE)/$(basename $IMAGE)_tmp_flirt
+  OUT=$(dirname $IMAGE)/$(basename $IMAGE)_MNI
+  REF=$FSLDIR/data/standard/MNI152_T1_1mm.nii.gz
+  OUT=$(dirname $IMAGE)/$(basename $IMAGE)_tmp_fnirt
+  FIELD=$(dirname $IMAGE)/$(basename $IMAGE)_tmp_field
+  fnirt --ref=$REF --in=$IN --cout=$FIELD --iout=$(dirname $IMAGE)/$(basename $IMAGE)_MNI
+
+  if [[ ! -e $LABEL ]]; then
+    echo "Input label does not exist!"
+    exit 1
+  else
+    echo "--> Applying transformations in label volume"
+    applywarp --ref=$REF --in=$LABEL --premat=$(dirname $IMAGE)/$(basename $IMAGE)_native2temp.mat --warp=$(dirname $IMAGE)/$(basename $IMAGE)_tmp_flirt_warpcoef --out=$(dirname $LABEL)/$(basename $LABEL)_MNI.nii.gz --interp=nn
+    # Removing trash files
+    # rm `echo $(dirname $IMAGE)/$(basename $IMAGE)_tmp_flirt*` $(dirname $IMAGE)/$(basename $IMAGE)_native2temp.mat `echo $(dirname $IMAGE)/$(basename $IMAGE)_tmp_field*`
+  fi
+
+  # Removing trash files
+  # rm `echo $(dirname $IMAGE)/$(basename $IMAGE)_tmp_flirt*` `echo $(dirname $IMAGE)/$(basename $IMAGE)_tmp_field*`
 fi

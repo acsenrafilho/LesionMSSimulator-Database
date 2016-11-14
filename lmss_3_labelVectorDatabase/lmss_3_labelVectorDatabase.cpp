@@ -18,7 +18,7 @@ int main(int argc, char* argv[])
         std::cerr << argv[0]
                 << " labelsMainFolder sizeLesionFolder listofFilenames"
                 << std::endl;
-        std::cerr << "labelsMainFolder must have the output lesion size folders (5-20, 20-75,...)"
+        std::cerr << "labelsMainFolder must have the output lesion size folders (5-20, 20-75,75-200,200-750,750-more)"
                   <<std::endl;
         std::cerr << "sizeLesionFolder informs what folder will be grouped (5-20, 20-75,75-200,200-750,750-more)"
                   <<std::endl;
