@@ -26,9 +26,9 @@ int main(int argc, char* argv[])
         std::cerr << argv[0]
                 << " imagesFolder imagePrefix minimumLesionSize(pixels) outputLesionFolder"
                 << std::endl;
-        std::cerr<<"The imagesFolder must contain the images files: <imagePrefix>_T1.nii.gz, <imagePrefix>_T2.nii.gz, <imagePrefix>_FLAIR.nii.gz, <imagePrefix>_FA.nii.gz, <imagePrefix>_ADC.nii.gz, <imagePrefix>_label.nii.gz"
+        std::cerr<<"The imagesFolder must contain the images files: <imagePrefix>_T1.nii.gz, <imagePrefix>_T2.nii.gz, <imagePrefix>_PD.nii.gz, <imagePrefix>_FLAIR.nii.gz, <imagePrefix>_FA.nii.gz, <imagePrefix>_ADC.nii.gz, <imagePrefix>_label.nii.gz"
                 << std::endl;
-        std::cerr << "outputLesionFolder must have the output lesion size folders (0-20, 20-75,...)"
+        std::cerr << "outputLesionFolder must have the output lesion size folders (50-100, 100-500,...)"
                   <<std::endl;
         return -1;
     }
@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
     const unsigned int Dimension = 3;
 
     typedef float                                    PixelType;
-    typedef unsigned char                            LabelPixelType;
+    typedef unsigned int                            LabelPixelType;
     typedef itk::Image<PixelType, Dimension>         ImageType;
     typedef itk::Image<LabelPixelType, Dimension>    LabelImageType;
 
@@ -77,11 +77,11 @@ int main(int argc, char* argv[])
     try
     {
         imageT1->Update();
-        //        imageT2->Update();
+        imageT2->Update();
         imageFLAIR->Update();
-        //        imagePD->Update();
-        //        imageFA->Update();
-        //        imageADC->Update();
+        imagePD->Update();
+        imageFA->Update();
+        imageADC->Update();
         label->Update();
     }
     catch ( itk::ExceptionObject &err)
@@ -100,13 +100,13 @@ int main(int argc, char* argv[])
     imageT18b->SetOutputMaximum(255.0);
     imageT18b->Update();
 
-    //    //T2
-    //    typedef itk::RescaleIntensityImageFilter<ImageType,ImageType>       RescalerType;
-    //    typename RescalerType::Pointer imageT28b = RescalerType::New();
-    //    imageT28b->SetInput(imageT2->GetOutput());
-    //    imageT28b->SetOutputMinimum(0.0);
-    //    imageT28b->SetOutputMaximum(255.0);
-    //    imageT28b->Update();
+    //T2
+    typedef itk::RescaleIntensityImageFilter<ImageType,ImageType>       RescalerType;
+    typename RescalerType::Pointer imageT28b = RescalerType::New();
+    imageT28b->SetInput(imageT2->GetOutput());
+    imageT28b->SetOutputMinimum(0.0);
+    imageT28b->SetOutputMaximum(255.0);
+    imageT28b->Update();
 
     //T2-FLAIR
     typedef itk::RescaleIntensityImageFilter<ImageType,ImageType>       RescalerType;
@@ -116,29 +116,29 @@ int main(int argc, char* argv[])
     imageFLAIR8b->SetOutputMaximum(255.0);
     imageFLAIR8b->Update();
 
-    //    //PD
-    //    typedef itk::RescaleIntensityImageFilter<ImageType,ImageType>       RescalerType;
-    //    typename RescalerType::Pointer imagePD8b = RescalerType::New();
-    //    imagePD8b->SetInput(imagePD->GetOutput());
-    //    imagePD8b->SetOutputMinimum(0.0);
-    //    imagePD8b->SetOutputMaximum(255.0);
-    //    imagePD8b->Update();
+    //PD
+    typedef itk::RescaleIntensityImageFilter<ImageType,ImageType>       RescalerType;
+    typename RescalerType::Pointer imagePD8b = RescalerType::New();
+    imagePD8b->SetInput(imagePD->GetOutput());
+    imagePD8b->SetOutputMinimum(0.0);
+    imagePD8b->SetOutputMaximum(255.0);
+    imagePD8b->Update();
 
-    //    //FA
-    //    typedef itk::RescaleIntensityImageFilter<ImageType,ImageType>       RescalerType;
-    //    typename RescalerType::Pointer imageFA8b = RescalerType::New();
-    //    imageFA8b->SetInput(imageFA->GetOutput());
-    //    imageFA8b->SetOutputMinimum(0.0);
-    //    imageFA8b->SetOutputMaximum(255.0);
-    //    imageFA8b->Update();
+    //FA
+    typedef itk::RescaleIntensityImageFilter<ImageType,ImageType>       RescalerType;
+    typename RescalerType::Pointer imageFA8b = RescalerType::New();
+    imageFA8b->SetInput(imageFA->GetOutput());
+    imageFA8b->SetOutputMinimum(0.0);
+    imageFA8b->SetOutputMaximum(255.0);
+    imageFA8b->Update();
 
-    //    //ADC
-    //    typedef itk::RescaleIntensityImageFilter<ImageType,ImageType>       RescalerType;
-    //    typename RescalerType::Pointer imageADC8b = RescalerType::New();
-    //    imageADC8b->SetInput(imageADC->GetOutput());
-    //    imageADC8b->SetOutputMinimum(0.0);
-    //    imageADC8b->SetOutputMaximum(255.0);
-    //    imageADC8b->Update();
+    //ADC
+    typedef itk::RescaleIntensityImageFilter<ImageType,ImageType>       RescalerType;
+    typename RescalerType::Pointer imageADC8b = RescalerType::New();
+    imageADC8b->SetInput(imageADC->GetOutput());
+    imageADC8b->SetOutputMinimum(0.0);
+    imageADC8b->SetOutputMaximum(255.0);
+    imageADC8b->Update();
 
     //******************************************************************
     //Label treatment - Removing and organizing the lesion database
@@ -184,10 +184,10 @@ int main(int argc, char* argv[])
         binary->SetUpperThreshold(l+1);
         binary->Update();
 
-        if (relabel->GetSizeOfObjectInPixels(l)>=750) {
-            //Saving the lesion map: 750-more mm3
+        if (relabel->GetSizeOfObjectInPixels(l)>=5000) {
+            //Saving the lesion map: 5000-more mm3
             stringstream output_file;
-            output_file<<output_folder.str().c_str()<<"750-more";
+            output_file<<output_folder.str().c_str()<<"5000-more";
             if (l<10) {
                 output_file<<"/"<<imagePrefix.str().c_str()<<"-lesion-00"<<l;
             }else if (l>=10 & l<100) {
@@ -201,10 +201,10 @@ int main(int argc, char* argv[])
             writer->SetInput(binary->GetOutput());
             writer->SetFileName(output_file.str().c_str());
             writer->Update();
-        }else if (relabel->GetSizeOfObjectInPixels(l)<750 && relabel->GetSizeOfObjectInPixels(l)>=200) {
-            //Saving the lesion map: 200-750 mm3
+        }else if (relabel->GetSizeOfObjectInPixels(l)<5000 && relabel->GetSizeOfObjectInPixels(l)>=1000) {
+            //Saving the lesion map: 1000-5000 mm3
             stringstream output_file;
-            output_file<<output_folder.str().c_str()<<"200-750";
+            output_file<<output_folder.str().c_str()<<"1000-5000";
             if (l<10) {
                 output_file<<"/"<<imagePrefix.str().c_str()<<"-lesion-00"<<l;
             }else if (l>=10 & l<100) {
@@ -218,10 +218,10 @@ int main(int argc, char* argv[])
             writer->SetInput(binary->GetOutput());
             writer->SetFileName(output_file.str().c_str());
             writer->Update();
-        }else if (relabel->GetSizeOfObjectInPixels(l)<200 && relabel->GetSizeOfObjectInPixels(l)>=75) {
-            //Saving the lesion map: 75-200 mm3
+        }else if (relabel->GetSizeOfObjectInPixels(l)<1000 && relabel->GetSizeOfObjectInPixels(l)>=500) {
+            //Saving the lesion map: 500-1000 mm3
             stringstream output_file;
-            output_file<<output_folder.str().c_str()<<"75-200";
+            output_file<<output_folder.str().c_str()<<"500-1000";
             if (l<10) {
                 output_file<<"/"<<imagePrefix.str().c_str()<<"-lesion-00"<<l;
             }else if (l>=10 & l<100) {
@@ -235,10 +235,10 @@ int main(int argc, char* argv[])
             writer->SetInput(binary->GetOutput());
             writer->SetFileName(output_file.str().c_str());
             writer->Update();
-        }else if (relabel->GetSizeOfObjectInPixels(l)<75 && relabel->GetSizeOfObjectInPixels(l)>=20) {
-            //Saving the lesion map: 20-75 mm3
+        }else if (relabel->GetSizeOfObjectInPixels(l)<500 && relabel->GetSizeOfObjectInPixels(l)>=100) {
+            //Saving the lesion map: 100-500 mm3
             stringstream output_file;
-            output_file<<output_folder.str().c_str()<<"20-75";
+            output_file<<output_folder.str().c_str()<<"100-500";
             if (l<10) {
                 output_file<<"/"<<imagePrefix.str().c_str()<<"-lesion-00"<<l;
             }else if (l>=10 & l<100) {
@@ -252,10 +252,10 @@ int main(int argc, char* argv[])
             writer->SetInput(binary->GetOutput());
             writer->SetFileName(output_file.str().c_str());
             writer->Update();
-        }else if (relabel->GetSizeOfObjectInPixels(l)<20 && relabel->GetSizeOfObjectInPixels(l)>=5) {
-            //Saving the lesion map: 5-20 mm3
+        }else if (relabel->GetSizeOfObjectInPixels(l)<100 && relabel->GetSizeOfObjectInPixels(l)>=50) {
+            //Saving the lesion map: 50-100 mm3
             stringstream output_file;
-            output_file<<output_folder.str().c_str()<<"5-20";
+            output_file<<output_folder.str().c_str()<<"50-100";
             if (l<10) {
                 output_file<<"/"<<imagePrefix.str().c_str()<<"-lesion-00"<<l;
             }else if (l>=10 & l<100) {
@@ -276,11 +276,11 @@ int main(int argc, char* argv[])
     //Extract information from the images
     fstream measureDatabase;
     stringstream measure_filepath;
-    measure_filepath<<output_folder.str().c_str()<<"measuresDatabase.csv";
+    measure_filepath<<output_folder.str().c_str()<<"/"<<imagePrefix.str().c_str()<<"_measuresDatabase.csv";
     cout<<"Saving table in: "<<measure_filepath.str().c_str()<<endl;
     measureDatabase.open(measure_filepath.str().c_str(), ios::out);
     measureDatabase<<",T1,,,,,T2,,,,,T2-FLAIR,,,,,PD,,,,,FA,,,,,ADC,,,,\n";
-    measureDatabase<<"pat_label,contrast,mean,std,min,max,contrast,mean,std,min,max,contrast,mean,std,min,max\n";
+    measureDatabase<<"pat_label,contrast,mean,std,min,max,contrast,mean,std,min,max,contrast,mean,std,min,max,contrast,mean,std,min,max,contrast,mean,std,min,max,contrast,mean,std,min,max\n";
 
     //White matter mask (contrast calculation)
     LabelReaderType::Pointer wm_mask = LabelReaderType::New();
@@ -346,31 +346,31 @@ int main(int argc, char* argv[])
             measureDatabase<<stat->GetMinimum(1)<<",";
             measureDatabase<<stat->GetMaximum(1)<<",";
 
-            //            //*****
-            //            //T2
-            //            //*****
-            //            //Measure: Contrast
-            //            stat->SetInput(imageT28b->GetOutput());
-            //            stat->SetLabelInput(binary->GetOutput());
-            //            stat->Update();
-            //            contrast=stat->GetMean(1);
+            //*****
+            //T2
+            //*****
+            //Measure: Contrast
+            stat->SetInput(imageT28b->GetOutput());
+            stat->SetLabelInput(binary->GetOutput());
+            stat->Update();
+            contrast=stat->GetMean(1);
 
-            //            stat->SetInput(imageT28b->GetOutput());
-            //            stat->SetLabelInput(maskN->GetOutput());
-            //            stat->Update();
-            //            contrast=contrast/stat->GetMean(3);
+            stat->SetInput(imageT28b->GetOutput());
+            stat->SetLabelInput(maskN->GetOutput());
+            stat->Update();
+            contrast=contrast/stat->GetMean(3);
 
-            //            measureDatabase<<contrast<<",";
+            measureDatabase<<contrast<<",";
 
-            //            //Measure: Mean,Sigma,Max and Min (from lesion)
-            //            stat->SetInput(imageT28b->GetOutput());
-            //            stat->SetLabelInput(binary->GetOutput());
-            //            stat->Update();
+            //Measure: Mean,Sigma,Max and Min (from lesion)
+            stat->SetInput(imageT28b->GetOutput());
+            stat->SetLabelInput(binary->GetOutput());
+            stat->Update();
 
-            //            measureDatabase<<stat->GetMean(1)<<",";
-            //            measureDatabase<<stat->GetSigma(1)<<",";
-            //            measureDatabase<<stat->GetMinimum(1)<<",";
-            //            measureDatabase<<stat->GetMaximum(1)<<",";
+            measureDatabase<<stat->GetMean(1)<<",";
+            measureDatabase<<stat->GetSigma(1)<<",";
+            measureDatabase<<stat->GetMinimum(1)<<",";
+            measureDatabase<<stat->GetMaximum(1)<<",";
 
             //*****
             //T2-FLAIR
@@ -398,83 +398,83 @@ int main(int argc, char* argv[])
             measureDatabase<<stat->GetMinimum(1)<<",";
             measureDatabase<<stat->GetMaximum(1)<<",";
 
-            //            //*****
-            //            //PD
-            //            //*****
-            //            //Measure: Contrast
-            //            stat->SetInput(imagePD8b->GetOutput());
-            //            stat->SetLabelInput(binary->GetOutput());
-            //            stat->Update();
-            //            contrast=stat->GetMean(1);
+            //*****
+            //PD
+            //*****
+            //Measure: Contrast
+            stat->SetInput(imagePD8b->GetOutput());
+            stat->SetLabelInput(binary->GetOutput());
+            stat->Update();
+            contrast=stat->GetMean(1);
 
-            //            stat->SetInput(imagePD8b->GetOutput());
-            //            stat->SetLabelInput(maskN->GetOutput());
-            //            stat->Update();
-            //            contrast=contrast/stat->GetMean(3);
+            stat->SetInput(imagePD8b->GetOutput());
+            stat->SetLabelInput(maskN->GetOutput());
+            stat->Update();
+            contrast=contrast/stat->GetMean(3);
 
-            //            measureDatabase<<contrast<<",";
+            measureDatabase<<contrast<<",";
 
-            //            //Measure: Mean,Sigma,Max and Min (from lesion)
-            //            stat->SetInput(imagePD8b->GetOutput());
-            //            stat->SetLabelInput(binary->GetOutput());
-            //            stat->Update();
+            //Measure: Mean,Sigma,Max and Min (from lesion)
+            stat->SetInput(imagePD8b->GetOutput());
+            stat->SetLabelInput(binary->GetOutput());
+            stat->Update();
 
-            //            measureDatabase<<stat->GetMean(1)<<",";
-            //            measureDatabase<<stat->GetSigma(1)<<",";
-            //            measureDatabase<<stat->GetMinimum(1)<<",";
-            //            measureDatabase<<stat->GetMaximum(1)<<",";
+            measureDatabase<<stat->GetMean(1)<<",";
+            measureDatabase<<stat->GetSigma(1)<<",";
+            measureDatabase<<stat->GetMinimum(1)<<",";
+            measureDatabase<<stat->GetMaximum(1)<<",";
 
-            //            //*****
-            //            //FA
-            //            //*****
-            //            //Measure: Contrast
-            //            stat->SetInput(imageFA8b->GetOutput());
-            //            stat->SetLabelInput(binary->GetOutput());
-            //            stat->Update();
-            //            contrast=stat->GetMean(1);
+            //*****
+            //FA
+            //*****
+            //Measure: Contrast
+            stat->SetInput(imageFA8b->GetOutput());
+            stat->SetLabelInput(binary->GetOutput());
+            stat->Update();
+            contrast=stat->GetMean(1);
 
-            //            stat->SetInput(imageFA8b->GetOutput());
-            //            stat->SetLabelInput(maskN->GetOutput());
-            //            stat->Update();
-            //            contrast=contrast/stat->GetMean(3);
+            stat->SetInput(imageFA8b->GetOutput());
+            stat->SetLabelInput(maskN->GetOutput());
+            stat->Update();
+            contrast=contrast/stat->GetMean(3);
 
-            //            measureDatabase<<contrast<<",";
+            measureDatabase<<contrast<<",";
 
-            //            //Measure: Mean,Sigma,Max and Min (from lesion)
-            //            stat->SetInput(imageFA8b->GetOutput());
-            //            stat->SetLabelInput(binary->GetOutput());
-            //            stat->Update();
+            //Measure: Mean,Sigma,Max and Min (from lesion)
+            stat->SetInput(imageFA8b->GetOutput());
+            stat->SetLabelInput(binary->GetOutput());
+            stat->Update();
 
-            //            measureDatabase<<stat->GetMean(1)<<",";
-            //            measureDatabase<<stat->GetSigma(1)<<",";
-            //            measureDatabase<<stat->GetMinimum(1)<<",";
-            //            measureDatabase<<stat->GetMaximum(1)<<",";
+            measureDatabase<<stat->GetMean(1)<<",";
+            measureDatabase<<stat->GetSigma(1)<<",";
+            measureDatabase<<stat->GetMinimum(1)<<",";
+            measureDatabase<<stat->GetMaximum(1)<<",";
 
-            //            //*****
-            //            //ADC
-            //            //*****
-            //            //Measure: Contrast
-            //            stat->SetInput(imageADC8b->GetOutput());
-            //            stat->SetLabelInput(binary->GetOutput());
-            //            stat->Update();
-            //            contrast=stat->GetMean(1);
+            //*****
+            //ADC
+            //*****
+            //Measure: Contrast
+            stat->SetInput(imageADC8b->GetOutput());
+            stat->SetLabelInput(binary->GetOutput());
+            stat->Update();
+            contrast=stat->GetMean(1);
 
-            //            stat->SetInput(imageADC8b->GetOutput());
-            //            stat->SetLabelInput(maskN->GetOutput());
-            //            stat->Update();
-            //            contrast=contrast/stat->GetMean(3);
+            stat->SetInput(imageADC8b->GetOutput());
+            stat->SetLabelInput(maskN->GetOutput());
+            stat->Update();
+            contrast=contrast/stat->GetMean(3);
 
-            //            measureDatabase<<contrast<<",";
+            measureDatabase<<contrast<<",";
 
-            //            //Measure: Mean,Sigma,Max and Min (from lesion)
-            //            stat->SetInput(imageADC8b->GetOutput());
-            //            stat->SetLabelInput(binary->GetOutput());
-            //            stat->Update();
+            //Measure: Mean,Sigma,Max and Min (from lesion)
+            stat->SetInput(imageADC8b->GetOutput());
+            stat->SetLabelInput(binary->GetOutput());
+            stat->Update();
 
-            //            measureDatabase<<stat->GetMean(1)<<",";
-            //            measureDatabase<<stat->GetSigma(1)<<",";
-            //            measureDatabase<<stat->GetMinimum(1)<<",";
-            //            measureDatabase<<stat->GetMaximum(1)<<",";
+            measureDatabase<<stat->GetMean(1)<<",";
+            measureDatabase<<stat->GetSigma(1)<<",";
+            measureDatabase<<stat->GetMinimum(1)<<",";
+            measureDatabase<<stat->GetMaximum(1)<<",";
 
             //End of line
             measureDatabase<<"\n";
